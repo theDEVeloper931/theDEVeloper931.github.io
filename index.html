@@ -3,59 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Colorful HTML Template</title>
+    <title>Basic Pong Game</title>
     <style>
         body {
-            background-color: #f0f8ff; /* Alice Blue */
-            color: #333; /* Darker text for better readability */
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-        }
-        .container {
-            text-align: center;
-            padding: 20px;
-            border: 5px solid #8a2be2; /* Blue Violet border */
-            border-radius: 15px;
-            background-color: #fff; /* White background */
-            box-shadow: 0px 0px 20px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #ff4500; /* Orange Red */
-            font-size: 3em;
-        }
-        p {
-            font-size: 1.2em;
-            color: #4682b4; /* Steel Blue */
-        }
-        .colorful-button {
-            background: linear-gradient(to right, #ff7e5f, #feb47b); /* Gradient background */
-            border: none;
+            background-color: #282c34;
             color: white;
-            padding: 15px 30px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 1em;
-            margin-top: 20px;
-            cursor: pointer;
-            border-radius: 25px;
-            transition: background 0.3s ease;
+            font-family: Arial, sans-serif;
+            margin: 0;
         }
-        .colorful-button:hover {
-            background: linear-gradient(to right, #feb47b, #ff7e5f); /* Reverse gradient on hover */
+        #gameCanvas {
+            background-color: #000;
+            border: 5px solid #fff;
+        }
+        .start-button {
+            background-color: #61dafb;
+            border: none;
+            padding: 10px 20px;
+            color: #282c34;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Hi my name is devsha!</h1>
-        <p>This is a colorful HTML template with a button.</p>
-        <button class="colorful-button">Click Me!</button>
+    <div>
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        <button class="start-button" onclick="startGame()">Start Game</button>
     </div>
+    <script>
+        let canvas = document.getElementById("gameCanvas");
+        let ctx = canvas.getContext("2d");
+
+        // Paddle properties
+        let paddleWidth = 10, paddleHeight = 100;
+        let paddleSpeed = 8;
+
+        // Ball properties
+        let ballRadius = 10;
+        let ballSpeed = 4;
+
+        let leftPaddle = { x: 0, y: canvas.height / 2 - paddleHeight / 2, dy: 0 };
+        let rightPaddle = { x: canvas.width - paddleWidth, y: canvas.height / 2 - paddleHeight / 2, dy: 0 };
+        let ball = { x: canvas.width / 2, y: canvas.height / 2, dx: ballSpeed, dy: ballSpeed };
+
+        let running = false;
+
+        function drawRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+        }
+
+        function drawCircle(x, y, r, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw paddles
+            drawRect(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight, "#fff");
+            drawRect(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight, "#fff");
+
+            // Draw ball
+            drawCircle(ball.x, ball.y, ballRadius, "#ff4500");
+        }
+
+        function movePaddles() {
+            leftPaddle.y += leftPaddle.dy;
+            rightPaddle.y += rightPaddle.dy;
+
+            if (leftPaddle.y < 0) leftPaddle.y = 0;
+            if (leftPaddle.y + paddleHeight > canvas.height) leftPaddle.y = canvas.height - paddleHeight;
+
+            if (rightPaddle.y < 0) rightPaddle.y = 0;
+            if (rightPaddle.y + paddleHeight > canvas.height) rightPaddle.y = canvas.height - paddleHeight;
+        }
+
+        function moveBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball collision with top and bottom walls
+            if (ball.y - ballRadius < 0 || ball.y + ballRadius > canvas.height) {
+                ball.dy = -ball.dy;
+            }
+
+            // Ball collision with paddles
+            if ((ball.x - ballRadius < paddleWidth && ball.y > leftPaddle.y && ball.y < leftPaddle.y + paddleHeight) ||
+                (ball.x + ballRadius > canvas.width - paddleWidth && ball.y > rightPaddle.y && ball.y < rightPaddle.y + paddleHeight)) {
+                ball.dx = -ball.dx;
+            }
+
+            // Ball out of bounds
+            if (ball.x - ballRadius < 0 || ball.x + ballRadius > canvas.width) {
+                ball.x = canvas.width / 2;
+                ball.y = canvas.height / 2;
+                ball.dx = ballSpeed;
+                ball.dy = ballSpeed;
+            }
+        }
+
+        function update() {
+            if (running) {
+                movePaddles();
+                moveBall();
+                draw();
+            }
+            requestAnimationFrame(update);
+        }
+
+        function keyDownHandler(e) {
+            if (e.key === "ArrowUp") rightPaddle.dy = -paddleSpeed;
+            if (e.key === "ArrowDown") rightPaddle.dy = paddleSpeed;
+            if (e.key === "w") leftPaddle.dy = -paddleSpeed;
+            if (e.key === "s") leftPaddle.dy = paddleSpeed;
+        }
+
+        function keyUpHandler(e) {
+            if (e.key === "ArrowUp" || e.key === "ArrowDown") rightPaddle.dy = 0;
+            if (e.key === "w" || e.key === "s") leftPaddle.dy = 0;
+        }
+
+        function startGame() {
+            running = true;
+        }
+
+        // Event listeners
+        document.addEventListener("keydown", keyDownHandler);
+        document.addEventListener("keyup", keyUpHandler);
+
+        // Initial draw
+        draw();
+
+        // Start game loop
+        requestAnimationFrame(update);
+    </script>
 </body>
 </html>
